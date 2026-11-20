@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PySpark / Hadoop / Delta
+derby.log
+metastore_db/
+spark-warehouse/
+*.parquet
+*.delta
+_delta_log/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+*.egg-info/
+build/
+dist/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Output artifacts
+output/
+temp/
