@@ -183,8 +183,12 @@ def route_and_reconcile_country_tables(
             else:
                 retained_existing = existing_df
 
+            # Ensure column schema matches incoming before union
+            if "last_updated_at" in retained_existing.columns:
+                retained_existing = retained_existing.drop("last_updated_at")
+
             # Combine retained existing members with incoming updates
-            combined = retained_existing.unionByName(incoming_for_country)
+            combined = retained_existing.unionByName(incoming_for_country, allowMissingColumns=True)
             reconciled = deduplicate_latest_members(combined)
         else:
             reconciled = incoming_for_country
@@ -195,15 +199,21 @@ def route_and_reconcile_country_tables(
             F.date_format(F.current_timestamp(), "yyyy-MM-dd HH:mm:ss"),
         )
 
-        country_tables_result[table_name] = final_country_df
-
         # Persist table to disk if it contains rows
         if final_country_df.count() > 0:
             logger.info(f"Writing {final_country_df.count()} records to {table_name} at {table_path}")
+            # Cache and materialize in memory to prevent read-during-overwrite race conditions
+            cached_df = final_country_df.cache()
+            cached_df.count()
             (
-                final_country_df.write.mode("overwrite")
+                cached_df.write.mode("overwrite")
                 .format(file_format)
                 .save(str(table_path))
             )
+            # Re-read freshly written table from disk so downstream actions reference new files
+            country_tables_result[table_name] = spark.read.format(file_format).load(str(table_path))
+            cached_df.unpersist()
+        else:
+            country_tables_result[table_name] = final_country_df
 
     return country_tables_result
