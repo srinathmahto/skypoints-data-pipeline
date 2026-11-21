@@ -33,4 +33,6 @@ Thumbs.db
 
 # Output artifacts
 output/
+data/output/
+data/output_heterogeneous/
 temp/
